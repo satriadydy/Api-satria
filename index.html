@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <title>Nadia Store Web</title>
+</head>
+<body>
+  <h2>Nadia Store - Web Panel</h2>
+
+  <button onclick="mulai()">Login & Mulai</button>
+
+  <h3>💰 Saldo: <span id="saldo">-</span></h3>
+  <h3>📦 Daftar Paket:</h3>
+  <div id="paket-list"></div>
+
+  <h3>🛒 Beli Paket</h3>
+  <input id="layanan" placeholder="ID Paket" /><br />
+  <input id="target" placeholder="Nomor HP" /><br />
+  <button onclick="beli()">Beli</button>
+
+  <p id="pesan"></p>
+
+  <script>
+    let token = "";
+
+    async function mulai() {
+      const res = await fetch("/.netlify/functions/login", { method: "POST" });
+      const data = await res.json();
+      token = data.token;
+      document.getElementById("pesan").innerText = "Login berhasil!";
+      tampilSaldo();
+      tampilPaket();
+    }
+
+    async function tampilSaldo() {
+      const res = await fetch("/.netlify/functions/saldo", {
+        headers: { Authorization: "Bearer " + token }
+      });
+      const data = await res.json();
+      document.getElementById("saldo").innerText = "Rp " + data.data.saldo;
+    }
+
+    async function tampilPaket() {
+      const res = await fetch("/.netlify/functions/paket", {
+        headers: { Authorization: "Bearer " + token }
+      });
+      const data = await res.json();
+      const div = document.getElementById("paket-list");
+      div.innerHTML = data.data.map(p =>
+        `<div>
+          <b>${p.nama}</b><br/>Harga: Rp${p.harga}<br/>ID: ${p.kode}
+        </div><hr/>`
+      ).join("");
+    }
+
+    async function beli() {
+      const layanan = document.getElementById("layanan").value;
+      const target = document.getElementById("target").value;
+      const res = await fetch("/.netlify/functions/beli", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token
+        },
+        body: JSON.stringify({ layanan, target })
+      });
+      const data = await res.json();
+      document.getElementById("pesan").innerText = data.message || "Selesai";
+    }
+  </script>
+</body>
+</html>
